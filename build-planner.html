@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Build Planner · LoL Tools</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,42 +35,89 @@
       text-transform: uppercase;
       margin-bottom: 6px;
     }
-    .subtitle { text-align: center; color: #5b5b5b; font-size: 0.85rem; margin-bottom: 32px; }
+    .subtitle { text-align: center; color: #5b5b5b; font-size: 0.85rem; margin-bottom: 16px; }
 
-    /* ── Layout ── */
-    .workspace {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 24px;
-      align-items: start;
+    /* ── Auth bar ── */
+    .auth-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      font-size: 0.82rem;
     }
-
-    @media (max-width: 860px) {
-      .workspace { grid-template-columns: 1fr; }
+    .auth-bar .user-info { color: #c8a96e; }
+    .auth-bar .user-info span { color: #c89b3c; font-weight: 700; }
+    .auth-btn {
+      background: none;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      color: #5b5b5b;
+      cursor: pointer;
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      transition: all 0.15s;
     }
+    .auth-btn:hover { border-color: #c89b3c; color: #c89b3c; }
+    .auth-btn.highlight { border-color: #c89b3c44; color: #c89b3c; background: #1a1608; }
+    .auth-btn.highlight:hover { background: #c89b3c; color: #0a0a0f; }
 
-    /* ── Panels ── */
-    .panel {
+    /* ── Auth Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 400;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
       background: #111118;
       border: 1px solid #2a2a3a;
-      border-radius: 10px;
-      padding: 20px;
+      border-radius: 12px;
+      padding: 28px;
+      width: 380px;
+      max-width: 95vw;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    .panel-title {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #c89b3c;
+      letter-spacing: 0.05em;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid #2a2a3a;
+      gap: 0;
+    }
+    .auth-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
       color: #5b5b5b;
-      margin-bottom: 14px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      margin-bottom: -1px;
+      padding: 8px 16px;
+      text-transform: uppercase;
+      transition: all 0.15s;
     }
+    .auth-tab.active { border-bottom-color: #c89b3c; color: #c89b3c; }
 
-    /* ── Search ── */
-    .search-wrap { position: relative; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5b5b5b; }
 
-    input[type="text"] {
+    input[type="text"], input[type="password"] {
       width: 100%;
       background: #0d0d14;
       border: 1px solid #2a2a3a;
@@ -80,115 +128,35 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    input[type="text"]:focus { border-color: #c89b3c; }
-    input[type="text"]::placeholder { color: #3a3a4a; }
+    input[type="text"]:focus, input[type="password"]:focus { border-color: #c89b3c; }
+    input::placeholder { color: #3a3a4a; }
 
-    .dropdown {
-      position: absolute;
-      top: 100%; left: 0; right: 0;
-      background: #16161f;
-      border: 1px solid #2a2a3a;
-      border-top: none;
-      border-radius: 0 0 6px 6px;
-      max-height: 220px;
-      overflow-y: auto;
-      z-index: 200;
-      display: none;
-    }
-    .dropdown.open { display: block; }
-
-    .dd-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 12px;
-      cursor: pointer;
-      transition: background 0.15s;
-      font-size: 0.9rem;
-    }
-    .dd-item:hover { background: #1e1e2a; }
-    .dd-item img { width: 32px; height: 32px; border-radius: 4px; border: 1px solid #2a2a3a; }
-
-    /* ── Champion Card ── */
-    .champ-card {
-      display: none;
-      align-items: center;
-      gap: 14px;
-      margin-top: 14px;
-      padding: 12px;
-      background: #0d0d14;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-    }
-    .champ-card.visible { display: flex; }
-    .champ-card img { width: 56px; height: 56px; border-radius: 8px; border: 2px solid #c89b3c; }
-    .champ-card .champ-name { font-size: 1.05rem; font-weight: 700; color: #e8c97e; }
-    .champ-card .champ-title { font-size: 0.78rem; color: #5b5b5b; margin-top: 2px; }
-
-    /* ── Build name ── */
-    .build-name-wrap { margin-top: 16px; }
-    .build-name-wrap label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5b5b5b; display: block; margin-bottom: 6px; }
-
-    /* ── Item Slots ── */
-    .item-slots {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .item-slot {
-      aspect-ratio: 1;
-      background: #0d0d14;
-      border: 2px dashed #2a2a3a;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-    .item-slot:hover { border-color: #c89b3c; background: #14141c; }
-    .item-slot.filled { border-style: solid; border-color: #3a3a4a; }
-    .item-slot.filled:hover { border-color: #c89b3c; }
-    .item-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-    .item-slot .slot-plus { font-size: 1.4rem; color: #2a2a3a; transition: color 0.2s; }
-    .item-slot:hover .slot-plus { color: #c89b3c; }
-    .item-slot .remove-btn {
-      position: absolute;
-      top: 2px; right: 2px;
-      background: rgba(0,0,0,0.7);
-      border: none;
-      border-radius: 50%;
+    .auth-error {
       color: #f44336;
-      font-size: 0.7rem;
-      width: 18px; height: 18px;
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
+      font-size: 0.78rem;
+      min-height: 18px;
     }
-    .item-slot.filled:hover .remove-btn { display: flex; }
-    .item-slot .slot-name {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.75);
-      font-size: 0.55rem;
-      color: #c8a96e;
-      text-align: center;
-      padding: 2px 3px;
-      display: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .item-slot.filled:hover .slot-name { display: block; }
 
-    /* ── Item picker modal ── */
-    .modal-overlay {
+    .btn {
+      background: none;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      color: #c8a96e;
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 9px 14px;
+      transition: all 0.15s;
+      flex: 1;
+    }
+    .btn:hover { border-color: #c89b3c; color: #c89b3c; }
+    .btn.primary { background: #1a1608; border-color: #c89b3c; color: #c89b3c; }
+    .btn.primary:hover { background: #c89b3c; color: #0a0a0f; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .modal-actions { display: flex; gap: 8px; }
+
+    /* ── Item modal ── */
+    .item-modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.7);
@@ -197,9 +165,9 @@
       align-items: center;
       justify-content: center;
     }
-    .modal-overlay.open { display: flex; }
+    .item-modal-overlay.open { display: flex; }
 
-    .modal {
+    .item-modal {
       background: #111118;
       border: 1px solid #2a2a3a;
       border-radius: 10px;
@@ -210,13 +178,6 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-    }
-
-    .modal-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #5b5b5b;
     }
 
     .modal-results {
@@ -251,25 +212,121 @@
       white-space: nowrap;
       width: 100%;
     }
-    .modal-close {
-      background: none;
-      border: 1px solid #2a2a3a;
-      border-radius: 6px;
-      color: #5b5b5b;
-      cursor: pointer;
-      font-size: 0.8rem;
-      padding: 6px 14px;
-      align-self: flex-end;
-      transition: all 0.15s;
-    }
-    .modal-close:hover { border-color: #c89b3c; color: #c89b3c; }
 
-    /* ── Right column ── */
+    /* ── Layout ── */
+    .workspace {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .workspace { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .panel-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #5b5b5b;
+      margin-bottom: 14px;
+    }
+
+    .search-wrap { position: relative; }
+    .dropdown {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: #16161f;
+      border: 1px solid #2a2a3a;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+    }
+    .dropdown.open { display: block; }
+    .dd-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 0.9rem;
+    }
+    .dd-item:hover { background: #1e1e2a; }
+    .dd-item img { width: 32px; height: 32px; border-radius: 4px; border: 1px solid #2a2a3a; }
+
+    .champ-card {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      margin-top: 14px;
+      padding: 12px;
+      background: #0d0d14;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+    }
+    .champ-card.visible { display: flex; }
+    .champ-card img { width: 56px; height: 56px; border-radius: 8px; border: 2px solid #c89b3c; }
+    .champ-card .champ-name { font-size: 1.05rem; font-weight: 700; color: #e8c97e; }
+    .champ-card .champ-title { font-size: 0.78rem; color: #5b5b5b; margin-top: 2px; }
+
+    .item-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .item-slot {
+      aspect-ratio: 1;
+      background: #0d0d14;
+      border: 2px dashed #2a2a3a;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .item-slot:hover { border-color: #c89b3c; background: #14141c; }
+    .item-slot.filled { border-style: solid; border-color: #3a3a4a; }
+    .item-slot.filled:hover { border-color: #c89b3c; }
+    .item-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .item-slot .slot-plus { font-size: 1.4rem; color: #2a2a3a; transition: color 0.2s; }
+    .item-slot:hover .slot-plus { color: #c89b3c; }
+    .item-slot .remove-btn {
+      position: absolute; top: 2px; right: 2px;
+      background: rgba(0,0,0,0.7);
+      border: none; border-radius: 50%;
+      color: #f44336; font-size: 0.7rem;
+      width: 18px; height: 18px;
+      cursor: pointer; display: none;
+      align-items: center; justify-content: center;
+    }
+    .item-slot.filled:hover .remove-btn { display: flex; }
+    .item-slot .slot-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.75);
+      font-size: 0.55rem; color: #c8a96e;
+      text-align: center; padding: 2px 3px;
+      display: none;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .item-slot.filled:hover .slot-name { display: block; }
+
     .right-col { display: flex; flex-direction: column; gap: 20px; }
 
-    /* ── Tags ── */
     .tags-wrap { display: flex; flex-wrap: wrap; gap: 8px; min-height: 32px; }
-
     .tag {
       background: #1a1a08;
       border: 1px solid #c89b3c44;
@@ -280,92 +337,50 @@
       letter-spacing: 0.06em;
       padding: 4px 12px;
     }
-
     .tag-empty { color: #3a3a4a; font-size: 0.8rem; font-style: italic; }
 
-    /* ── Stats table ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 16px;
-    }
-
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
     .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      border-bottom: 1px solid #1a1a24;
-      font-size: 0.85rem;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; border-bottom: 1px solid #1a1a24; font-size: 0.85rem;
     }
     .stat-row .s-name { color: #7a7a8a; }
     .stat-row .s-val { color: #e8c97e; font-weight: 700; }
 
     .gold-total {
-      margin-top: 12px;
-      padding: 10px 14px;
-      background: #0f0e08;
-      border: 1px solid #c89b3c44;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.9rem;
+      margin-top: 12px; padding: 10px 14px;
+      background: #0f0e08; border: 1px solid #c89b3c44;
+      border-radius: 6px; display: flex;
+      justify-content: space-between; font-size: 0.9rem;
     }
     .gold-total span:last-child { color: #c89b3c; font-weight: 700; }
 
-    /* ── Saved builds ── */
-    .build-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .btn {
-      background: none;
-      border: 1px solid #2a2a3a;
-      border-radius: 6px;
-      color: #c8a96e;
-      cursor: pointer;
-      font-size: 0.8rem;
-      padding: 7px 14px;
-      transition: all 0.15s;
-      flex: 1;
-    }
-    .btn:hover { border-color: #c89b3c; color: #c89b3c; }
-    .btn.primary { background: #1a1608; border-color: #c89b3c; color: #c89b3c; }
-    .btn.primary:hover { background: #c89b3c; color: #0a0a0f; }
-    .btn.danger:hover { border-color: #f44336; color: #f44336; }
+    .build-actions { display: flex; gap: 8px; margin-top: 8px; }
 
     .saved-list { display: flex; flex-direction: column; gap: 8px; }
-
     .saved-build {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      background: #0d0d14;
-      border: 1px solid #2a2a3a;
-      border-radius: 7px;
-      cursor: pointer;
-      transition: border-color 0.15s;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; background: #0d0d14;
+      border: 1px solid #2a2a3a; border-radius: 7px;
+      cursor: pointer; transition: border-color 0.15s;
     }
     .saved-build:hover { border-color: #c89b3c44; }
     .saved-build img { width: 36px; height: 36px; border-radius: 5px; border: 1px solid #2a2a3a; }
     .saved-build .sb-name { font-size: 0.85rem; color: #c8a96e; font-weight: 600; }
     .saved-build .sb-meta { font-size: 0.72rem; color: #5b5b5b; margin-top: 1px; }
     .saved-build .sb-del {
-      margin-left: auto;
-      background: none;
-      border: none;
-      color: #3a3a4a;
-      cursor: pointer;
-      font-size: 1rem;
-      padding: 4px;
-      transition: color 0.15s;
+      margin-left: auto; background: none; border: none;
+      color: #3a3a4a; cursor: pointer; font-size: 1rem;
+      padding: 4px; transition: color 0.15s;
     }
     .saved-build .sb-del:hover { color: #f44336; }
-
     .no-builds { color: #3a3a4a; font-size: 0.82rem; font-style: italic; }
+
+    .sync-notice {
+      font-size: 0.75rem; color: #5b5b5b;
+      text-align: center; padding: 6px 0;
+    }
+    .sync-notice span { color: #4caf50; }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0d0d14; }
@@ -378,11 +393,50 @@
 <h1>🧮 Build Planner</h1>
 <p class="subtitle">League of Legends · Patch 16.6.1</p>
 
+<!-- Auth Bar -->
+<div class="auth-bar" id="authBar">
+  <div id="authBarContent">
+    <button class="auth-btn highlight" id="openAuthBtn">🔑 Login / Register</button>
+  </div>
+</div>
+
+<!-- ── Auth Modal ── -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <div class="modal-title">Account</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin">Login</button>
+      <button class="auth-tab" id="tabRegister">Register</button>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="authUsername" placeholder="your_username" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="authPassword" placeholder="••••••••">
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="modal-actions">
+      <button class="btn" id="authCancelBtn">Cancel</button>
+      <button class="btn primary" id="authSubmitBtn">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Item Picker Modal ── -->
+<div class="item-modal-overlay" id="itemModalOverlay">
+  <div class="item-modal">
+    <div class="panel-title">Select an Item</div>
+    <input type="text" id="modalSearch" placeholder="Search items..." autocomplete="off">
+    <div class="modal-results" id="modalResults"></div>
+    <button class="btn" id="modalClose">Cancel</button>
+  </div>
+</div>
+
 <div class="workspace">
-
-  <!-- ── LEFT: Builder ── -->
+  <!-- LEFT -->
   <div style="display:flex;flex-direction:column;gap:16px">
-
     <div class="panel">
       <div class="panel-title">Champion</div>
       <div class="search-wrap">
@@ -405,21 +459,17 @@
 
     <div class="panel">
       <div class="panel-title">Items (6 Slots)</div>
-      <div class="item-slots" id="itemSlots">
-        <!-- filled by JS -->
-      </div>
+      <div class="item-slots" id="itemSlots"></div>
     </div>
 
     <div class="build-actions">
       <button class="btn primary" id="saveBtn">💾 Save Build</button>
       <button class="btn" id="resetBtn">↺ Reset</button>
     </div>
-
   </div>
 
-  <!-- ── RIGHT: Stats + Saved ── -->
+  <!-- RIGHT -->
   <div class="right-col">
-
     <div class="panel">
       <div class="panel-title">Build Tags</div>
       <div class="tags-wrap" id="tagsWrap">
@@ -430,7 +480,9 @@
     <div class="panel">
       <div class="panel-title">Total Stats</div>
       <div class="stats-grid" id="statsGrid">
-        <div class="stat-row" style="grid-column:1/-1"><span class="s-name" style="font-style:italic;color:#3a3a4a">No items selected</span></div>
+        <div class="stat-row" style="grid-column:1/-1">
+          <span class="s-name" style="font-style:italic;color:#3a3a4a">No items selected</span>
+        </div>
       </div>
       <div class="gold-total" id="goldTotal" style="display:none">
         <span>🪙 Total Gold Cost</span>
@@ -439,62 +491,149 @@
     </div>
 
     <div class="panel">
-      <div class="panel-title">Saved Builds</div>
+      <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Saved Builds</span>
+        <span id="syncStatus" class="sync-notice"></span>
+      </div>
       <div class="saved-list" id="savedList"></div>
     </div>
-
-  </div>
-</div>
-
-<!-- Item picker modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-title">Select an Item</div>
-    <input type="text" id="modalSearch" placeholder="Search items..." autocomplete="off">
-    <div class="modal-results" id="modalResults"></div>
-    <button class="modal-close" id="modalClose">Cancel</button>
   </div>
 </div>
 
 <script>
+const SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const VERSION = '16.6.1';
-const IMG_ITEM = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/item/`;
+const IMG_ITEM  = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/item/`;
 const IMG_CHAMP = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/champion/`;
 
-let allItems = {};
-let allChampions = {};
-let buildSlots = [null, null, null, null, null, null]; // 6 slots
+let allItems = {}, allChampions = {};
+let buildSlots = [null,null,null,null,null,null];
 let activeSlotIdx = null;
 let selectedChamp = null;
+let currentUser = null;
+let authMode = 'login';
 
-// ── Tag generation logic ──
+// ── Supabase Auth ──
+sb.auth.onAuthStateChange(async (event, session) => {
+  currentUser = session?.user || null;
+  updateAuthBar();
+  await renderSavedBuilds();
+});
+
+function updateAuthBar() {
+  const bar = document.getElementById('authBarContent');
+  if (currentUser) {
+    const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'User';
+    bar.innerHTML = `
+      <span class="user-info">👤 Logged in as <span>${username}</span></span>
+      <button class="auth-btn" id="logoutBtn">Logout</button>
+    `;
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+    });
+  } else {
+    bar.innerHTML = `<button class="auth-btn highlight" id="openAuthBtn">🔑 Login / Register</button>`;
+    document.getElementById('openAuthBtn').addEventListener('click', () => openAuthModal('login'));
+  }
+}
+
+function openAuthModal(mode) {
+  authMode = mode;
+  document.getElementById('authError').textContent = '';
+  document.getElementById('authUsername').value = '';
+  document.getElementById('authPassword').value = '';
+  setAuthTab(mode);
+  document.getElementById('authModal').classList.add('open');
+  setTimeout(() => document.getElementById('authUsername').focus(), 50);
+}
+
+function setAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+  document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Login' : 'Register';
+}
+
+document.getElementById('tabLogin').addEventListener('click', () => setAuthTab('login'));
+document.getElementById('tabRegister').addEventListener('click', () => setAuthTab('register'));
+document.getElementById('authCancelBtn').addEventListener('click', () => document.getElementById('authModal').classList.remove('open'));
+document.getElementById('authModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('authModal')) document.getElementById('authModal').classList.remove('open');
+});
+
+document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+  const username = document.getElementById('authUsername').value.trim().toLowerCase();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('authSubmitBtn');
+
+  if (!username || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+
+  const email = `${username}@lol-tools.app`;
+  btn.disabled = true;
+  errEl.textContent = '';
+
+  if (authMode === 'register') {
+    const { error } = await sb.auth.signUp({
+      email, password,
+      options: { data: { username } }
+    });
+    if (error) {
+      errEl.textContent = error.message.includes('already registered') ? 'Username already taken.' : error.message;
+      btn.disabled = false;
+      return;
+    }
+    document.getElementById('authModal').classList.remove('open');
+  } else {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      errEl.textContent = 'Invalid username or password.';
+      btn.disabled = false;
+      return;
+    }
+    document.getElementById('authModal').classList.remove('open');
+  }
+  btn.disabled = false;
+});
+
+// Enter key in auth form
+['authUsername','authPassword'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('authSubmitBtn').click();
+  });
+});
+
+// ── Tags ──
 const TAG_RULES = [
-  { tag: '⚔️ High AD',        check: s => (s['Attack Damage'] || 0) >= 60 },
-  { tag: '🔮 High AP',         check: s => (s['Ability Power'] || 0) >= 80 },
-  { tag: '🎯 Crit Build',      check: s => (s['Critical Strike Chance'] || 0) >= 40 },
-  { tag: '🗡️ Lethality',       check: s => (s['Lethality'] || 0) >= 18 },
-  { tag: '🛡️ Tank',            check: s => ((s['Health'] || 0) >= 400 || (s['Armor'] || 0) >= 60 || (s['Magic Resist'] || 0) >= 60) },
-  { tag: '❤️ Sustain',         check: s => (s['Life Steal'] || 0) >= 10 || (s['Omnivamp'] || 0) >= 8 },
-  { tag: '⚡ Attack Speed',    check: s => (s['Attack Speed'] || 0) >= 40 },
-  { tag: '🌀 Ability Haste',   check: s => (s['Ability Haste'] || 0) >= 30 },
-  { tag: '💜 Magic Pen',       check: s => (s['Magic Penetration'] || 0) >= 20 },
-  { tag: '🩸 Armor Pen',       check: s => (s['Armor Penetration'] || 0) >= 15 },
-  { tag: '💎 Mana Heavy',      check: s => (s['Mana'] || 0) >= 400 },
-  { tag: '🏃 Mobility',        check: s => (s['Move Speed'] || 0) >= 10 },
-  { tag: '🔋 Health Pool',     check: s => (s['Health'] || 0) >= 800 },
-  { tag: '🧊 Utility',         check: s => (s['Ability Haste'] || 0) >= 15 && (s['Mana'] || 0) >= 200 },
-  { tag: '💥 Burst',           check: s => (s['Ability Power'] || 0) >= 60 && (s['Ability Haste'] || 0) < 20 },
+  { tag: '⚔️ High AD',       check: s => (s['Attack Damage']||0) >= 60 },
+  { tag: '🔮 High AP',        check: s => (s['Ability Power']||0) >= 80 },
+  { tag: '🎯 Crit Build',     check: s => (s['Critical Strike Chance']||0) >= 40 },
+  { tag: '🗡️ Lethality',      check: s => (s['Lethality']||0) >= 18 },
+  { tag: '🛡️ Tank',           check: s => (s['Health']||0) >= 400 || (s['Armor']||0) >= 60 || (s['Magic Resist']||0) >= 60 },
+  { tag: '❤️ Sustain',        check: s => (s['Life Steal']||0) >= 10 || (s['Omnivamp']||0) >= 8 },
+  { tag: '⚡ Attack Speed',   check: s => (s['Attack Speed']||0) >= 40 },
+  { tag: '🌀 Ability Haste',  check: s => (s['Ability Haste']||0) >= 30 },
+  { tag: '💜 Magic Pen',      check: s => (s['Magic Penetration']||0) >= 20 },
+  { tag: '🩸 Armor Pen',      check: s => (s['Armor Penetration']||0) >= 15 },
+  { tag: '💎 Mana Heavy',     check: s => (s['Mana']||0) >= 400 },
+  { tag: '🏃 Mobility',       check: s => (s['Move Speed']||0) >= 10 },
+  { tag: '🔋 Health Pool',    check: s => (s['Health']||0) >= 800 },
+  { tag: '🧊 Utility',        check: s => (s['Ability Haste']||0) >= 15 && (s['Mana']||0) >= 200 },
+  { tag: '💥 Burst',          check: s => (s['Ability Power']||0) >= 60 && (s['Ability Haste']||0) < 20 },
 ];
 
 function generateTags(stats) {
   const tags = TAG_RULES.filter(r => r.check(stats)).map(r => r.tag);
-  // Fill to 5 with generic tags based on highest stats if needed
   if (tags.length < 5) {
-    const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(stats).sort((a,b) => b[1]-a[1]);
     for (const [name] of sorted) {
       if (tags.length >= 5) break;
-      const generic = `📌 ${name}`;
-      if (!tags.some(t => t.includes(name))) tags.push(generic);
+      if (!tags.some(t => t.includes(name))) tags.push(`📌 ${name}`);
     }
   }
   return tags.slice(0, 5);
@@ -504,27 +643,24 @@ function parseDescriptionStats(description) {
   const stats = {};
   const match = description.match(/<stats>([\s\S]*?)<\/stats>/);
   if (!match) return stats;
-  const html = match[1];
   const regex = /<attention>([^<]+)<\/attention>\s*([^<\n\r]+)/g;
   let m;
-  while ((m = regex.exec(html)) !== null) {
-    const rawVal = m[1].trim().replace('%', '');
-    const name = m[2].trim().replace(/<[^>]+>/g, '').trim();
+  while ((m = regex.exec(match[1])) !== null) {
+    const rawVal = m[1].trim().replace('%','');
+    const name = m[2].trim().replace(/<[^>]+>/g,'').trim();
     const val = parseFloat(rawVal);
-    if (!isNaN(val) && name) stats[name] = (stats[name] || 0) + val;
+    if (!isNaN(val) && name) stats[name] = (stats[name]||0) + val;
   }
   return stats;
 }
 
 function formatStat(name, val) {
-  const pct = ['Critical Strike Chance','Critical Strike Damage','Attack Speed',
-               'Life Steal','Omnivamp','Heal and Shield Power','Tenacity',
-               'Armor Penetration','Magic Penetration'].includes(name);
+  const pct = ['Critical Strike Chance','Critical Strike Damage','Attack Speed','Life Steal','Omnivamp','Heal and Shield Power','Tenacity','Armor Penetration','Magic Penetration'].includes(name);
   if (pct) return val + '%';
   return val % 1 === 0 ? val : parseFloat(val.toFixed(1));
 }
 
-// ── Load data ──
+// ── Data ──
 async function loadData() {
   const [itemRes, champRes] = await Promise.all([
     fetch(`https://ddragon.leagueoflegends.com/cdn/${VERSION}/data/en_US/item.json`),
@@ -532,22 +668,16 @@ async function loadData() {
   ]);
   const itemData = await itemRes.json();
   const champData = await champRes.json();
-
-  // Filter items: purchasable, SR or ARAM
   const seen = {};
   for (const [id, item] of Object.entries(itemData.data)) {
     if (!item.gold?.purchasable) continue;
     if (!item.maps?.['11'] && !item.maps?.['12']) continue;
-    if (!seen[item.name]) {
-      allItems[id] = item;
-      seen[item.name] = id;
-    }
+    if (!seen[item.name]) { allItems[id] = item; seen[item.name] = id; }
   }
-
   allChampions = champData.data;
 }
 
-// ── Build slots UI ──
+// ── Slots ──
 function renderSlots() {
   const container = document.getElementById('itemSlots');
   container.innerHTML = '';
@@ -564,43 +694,37 @@ function renderSlots() {
     } else {
       slot.innerHTML = `<span class="slot-plus">+</span>`;
     }
-    slot.addEventListener('click', (e) => {
-      if (e.target.classList.contains('remove-btn')) return;
-      openModal(i);
-    });
+    slot.addEventListener('click', e => { if (!e.target.classList.contains('remove-btn')) openItemModal(i); });
     container.appendChild(slot);
   }
-  // Remove buttons
   container.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', e => {
       e.stopPropagation();
       buildSlots[parseInt(btn.dataset.idx)] = null;
-      renderSlots();
-      updateStats();
+      renderSlots(); updateStats();
     });
   });
 }
 
-// ── Modal ──
-function openModal(slotIdx) {
-  activeSlotIdx = slotIdx;
+// ── Item Modal ──
+function openItemModal(idx) {
+  activeSlotIdx = idx;
   document.getElementById('modalSearch').value = '';
   renderModalItems('');
-  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('itemModalOverlay').classList.add('open');
   setTimeout(() => document.getElementById('modalSearch').focus(), 50);
 }
 
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
+function closeItemModal() {
+  document.getElementById('itemModalOverlay').classList.remove('open');
   activeSlotIdx = null;
 }
 
 function renderModalItems(query) {
   const q = query.toLowerCase().trim();
   const results = Object.entries(allItems)
-    .filter(([id, item]) => !q || item.name.toLowerCase().includes(q))
+    .filter(([,item]) => !q || item.name.toLowerCase().includes(q))
     .slice(0, 60);
-
   const container = document.getElementById('modalResults');
   container.innerHTML = '';
   for (const [id, item] of results) {
@@ -609,57 +733,45 @@ function renderModalItems(query) {
     div.innerHTML = `<img src="${IMG_ITEM}${item.image.full}" alt="${item.name}"><span>${item.name}</span>`;
     div.addEventListener('click', () => {
       buildSlots[activeSlotIdx] = item;
-      closeModal();
-      renderSlots();
-      updateStats();
+      closeItemModal(); renderSlots(); updateStats();
     });
     container.appendChild(div);
   }
 }
 
 document.getElementById('modalSearch').addEventListener('input', e => renderModalItems(e.target.value));
-document.getElementById('modalClose').addEventListener('click', closeModal);
-document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
+document.getElementById('modalClose').addEventListener('click', closeItemModal);
+document.getElementById('itemModalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('itemModalOverlay')) closeItemModal();
+});
 
 // ── Stats ──
 function updateStats() {
   const combined = {};
   let totalGold = 0;
   const itemCount = buildSlots.filter(Boolean).length;
-
   for (const item of buildSlots) {
     if (!item) continue;
     totalGold += item.gold?.total || 0;
     const s = parseDescriptionStats(item.description || '');
-    for (const [k, v] of Object.entries(s)) {
-      combined[k] = (combined[k] || 0) + v;
-    }
+    for (const [k, v] of Object.entries(s)) combined[k] = (combined[k]||0) + v;
   }
-
-  // Stats grid
   const grid = document.getElementById('statsGrid');
   if (!itemCount) {
     grid.innerHTML = `<div class="stat-row" style="grid-column:1/-1"><span class="s-name" style="font-style:italic;color:#3a3a4a">No items selected</span></div>`;
     document.getElementById('goldTotal').style.display = 'none';
   } else {
-    const entries = Object.entries(combined).sort((a, b) => b[1] - a[1]);
-    grid.innerHTML = entries.map(([k, v]) => `
-      <div class="stat-row">
-        <span class="s-name">${k}</span>
-        <span class="s-val">${formatStat(k, v)}</span>
-      </div>
-    `).join('');
+    grid.innerHTML = Object.entries(combined).sort((a,b)=>b[1]-a[1])
+      .map(([k,v]) => `<div class="stat-row"><span class="s-name">${k}</span><span class="s-val">${formatStat(k,v)}</span></div>`)
+      .join('');
     document.getElementById('goldTotal').style.display = 'flex';
     document.getElementById('goldVal').textContent = totalGold.toLocaleString() + ' g';
   }
-
-  // Tags
   const tagsWrap = document.getElementById('tagsWrap');
   if (!itemCount) {
     tagsWrap.innerHTML = '<span class="tag-empty">Add items to generate tags…</span>';
   } else {
-    const tags = generateTags(combined);
-    tagsWrap.innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
+    tagsWrap.innerHTML = generateTags(combined).map(t => `<span class="tag">${t}</span>`).join('');
   }
 }
 
@@ -667,14 +779,11 @@ function updateStats() {
 function setupChampSearch() {
   const input = document.getElementById('champSearch');
   const drop  = document.getElementById('champDrop');
-
   input.addEventListener('input', () => {
     const q = input.value.toLowerCase().trim();
     drop.innerHTML = '';
-    if (q.length < 1) { drop.classList.remove('open'); return; }
-    const results = Object.entries(allChampions)
-      .filter(([k, c]) => c.name.toLowerCase().includes(q))
-      .slice(0, 10);
+    if (!q) { drop.classList.remove('open'); return; }
+    const results = Object.entries(allChampions).filter(([,c]) => c.name.toLowerCase().includes(q)).slice(0,10);
     if (!results.length) { drop.classList.remove('open'); return; }
     for (const [key, champ] of results) {
       const div = document.createElement('div');
@@ -693,109 +802,121 @@ function setupChampSearch() {
     }
     drop.classList.add('open');
   });
-
   document.addEventListener('click', e => {
     if (!input.contains(e.target) && !drop.contains(e.target)) drop.classList.remove('open');
   });
 }
 
-// ── Save / Load builds ──
-function saveBuilds(builds) {
-  localStorage.setItem('lol_builds', JSON.stringify(builds));
-}
-
-function loadBuildsFromStorage() {
-  try { return JSON.parse(localStorage.getItem('lol_builds') || '[]'); } catch { return []; }
-}
-
-function renderSavedBuilds() {
+// ── Save / Load ──
+async function renderSavedBuilds() {
   const list = document.getElementById('savedList');
-  const builds = loadBuildsFromStorage();
+  const sync = document.getElementById('syncStatus');
+  let builds = [];
+
+  if (currentUser) {
+    sync.innerHTML = '<span>☁️ Cloud Sync aktiv</span>';
+    const { data, error } = await sb.from('builds').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (!error) builds = data;
+  } else {
+    sync.innerHTML = 'Lokal · <a href="#" style="color:#c89b3c;text-decoration:none" id="loginToSync">Login für Cloud-Sync</a>';
+    document.getElementById('loginToSync')?.addEventListener('click', e => { e.preventDefault(); openAuthModal('login'); });
+    try { builds = JSON.parse(localStorage.getItem('lol_builds') || '[]'); } catch { builds = []; }
+  }
+
   if (!builds.length) {
     list.innerHTML = '<div class="no-builds">No saved builds yet.</div>';
     return;
   }
+
   list.innerHTML = '';
-  for (let i = 0; i < builds.length; i++) {
-    const b = builds[i];
+  builds.forEach((b, i) => {
     const div = document.createElement('div');
     div.className = 'saved-build';
-    const champImgSrc = b.champImg || '';
+    const itemIds = b.item_ids || b.itemIds || [];
+    const tags = b.tags || [];
+    const gold = b.gold || 0;
+    const champImg = b.champ_img || b.champImg || '';
+    const champName = b.champ_name || b.champName || 'No champion';
+    const buildId = b.id || i;
+
     div.innerHTML = `
-      ${champImgSrc ? `<img src="${champImgSrc}" alt="">` : '<div style="width:36px;height:36px;background:#1a1a24;border-radius:5px"></div>'}
-      <div>
+      ${champImg ? `<img src="${champImg}" alt="">` : '<div style="width:36px;height:36px;background:#1a1a24;border-radius:5px"></div>'}
+      <div style="flex:1;min-width:0">
         <div class="sb-name">${b.name || 'Unnamed Build'}</div>
-        <div class="sb-meta">${b.champName || 'No champion'} · ${b.items.filter(Boolean).length} items · 🪙 ${(b.gold||0).toLocaleString()}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${(b.tags||[]).map(t=>`<span style="font-size:0.65rem;background:#1a1a08;border:1px solid #c89b3c33;border-radius:10px;padding:1px 7px;color:#c89b3c">${t}</span>`).join('')}</div>
+        <div class="sb-meta">${champName} · ${itemIds.filter(Boolean).length} items · 🪙 ${gold.toLocaleString()}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+          ${tags.map(t=>`<span style="font-size:0.65rem;background:#1a1a08;border:1px solid #c89b3c33;border-radius:10px;padding:1px 7px;color:#c89b3c">${t}</span>`).join('')}
+        </div>
       </div>
-      <button class="sb-del" data-idx="${i}" title="Delete">🗑</button>
+      <button class="sb-del" title="Delete">🗑</button>
     `;
-    div.addEventListener('click', (e) => {
-      if (e.target.classList.contains('sb-del')) return;
-      loadBuild(b);
-    });
-    div.querySelector('.sb-del').addEventListener('click', (e) => {
+
+    div.querySelector('.sb-del').addEventListener('click', async e => {
       e.stopPropagation();
-      const builds = loadBuildsFromStorage();
-      builds.splice(i, 1);
-      saveBuilds(builds);
+      if (currentUser && b.id) {
+        await sb.from('builds').delete().eq('id', b.id);
+      } else {
+        const local = JSON.parse(localStorage.getItem('lol_builds')||'[]');
+        local.splice(i, 1);
+        localStorage.setItem('lol_builds', JSON.stringify(local));
+      }
       renderSavedBuilds();
     });
+
+    div.addEventListener('click', e => { if (!e.target.classList.contains('sb-del')) loadBuild(b); });
     list.appendChild(div);
-  }
+  });
 }
 
 function loadBuild(b) {
-  // Champion
-  if (b.champKey) {
-    const champ = allChampions[b.champKey];
-    if (champ) {
-      selectedChamp = { key: b.champKey, champ };
-      document.getElementById('champImg').src = IMG_CHAMP + champ.image.full;
-      document.getElementById('champName').textContent = champ.name;
-      document.getElementById('champTitle').textContent = champ.title;
-      document.getElementById('champCard').classList.add('visible');
-      document.getElementById('champSearch').value = champ.name;
-    }
+  const champKey = b.champ_key || b.champKey;
+  if (champKey && allChampions[champKey]) {
+    const champ = allChampions[champKey];
+    selectedChamp = { key: champKey, champ };
+    document.getElementById('champImg').src = IMG_CHAMP + champ.image.full;
+    document.getElementById('champName').textContent = champ.name;
+    document.getElementById('champTitle').textContent = champ.title;
+    document.getElementById('champCard').classList.add('visible');
+    document.getElementById('champSearch').value = champ.name;
   }
-  // Build name
   document.getElementById('buildName').value = b.name || '';
-  // Items
-  buildSlots = b.itemIds.map(id => id ? (allItems[id] || null) : null);
-  renderSlots();
-  updateStats();
+  const ids = b.item_ids || b.itemIds || [];
+  buildSlots = ids.map(id => id ? (allItems[id] || null) : null);
+  while (buildSlots.length < 6) buildSlots.push(null);
+  renderSlots(); updateStats();
 }
 
-document.getElementById('saveBtn').addEventListener('click', () => {
-  const hasItems = buildSlots.some(Boolean);
-  if (!hasItems) { alert('Add at least one item to save a build.'); return; }
-
-  const tagsWrap = document.getElementById('tagsWrap');
-  const tags = [...tagsWrap.querySelectorAll('.tag')].map(t => t.textContent);
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  if (!buildSlots.some(Boolean)) { alert('Add at least one item to save a build.'); return; }
+  const tags = [...document.getElementById('tagsWrap').querySelectorAll('.tag')].map(t => t.textContent);
   let gold = 0;
   buildSlots.forEach(item => { if (item) gold += item.gold?.total || 0; });
+  const itemIds = buildSlots.map(item => item ? Object.keys(allItems).find(id => allItems[id] === item) : null);
 
   const build = {
     name: document.getElementById('buildName').value.trim() || 'Unnamed Build',
-    champKey: selectedChamp?.key || null,
-    champName: selectedChamp?.champ?.name || null,
-    champImg: selectedChamp ? IMG_CHAMP + selectedChamp.champ.image.full : null,
-    itemIds: buildSlots.map(item => item ? Object.keys(allItems).find(id => allItems[id] === item) : null),
-    items: buildSlots,
-    tags,
-    gold,
-    savedAt: Date.now(),
+    champ_key: selectedChamp?.key || null,
+    champ_name: selectedChamp?.champ?.name || null,
+    champ_img: selectedChamp ? IMG_CHAMP + selectedChamp.champ.image.full : null,
+    item_ids: itemIds,
+    tags, gold,
   };
 
-  const builds = loadBuildsFromStorage();
-  builds.unshift(build);
-  saveBuilds(builds);
-  renderSavedBuilds();
-
-  // Flash feedback
   const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+
+  if (currentUser) {
+    const { error } = await sb.from('builds').insert({ ...build, user_id: currentUser.id });
+    if (error) { alert('Error saving: ' + error.message); btn.disabled = false; return; }
+  } else {
+    const local = JSON.parse(localStorage.getItem('lol_builds')||'[]');
+    local.unshift({ ...build, itemIds: itemIds, champKey: build.champ_key, champName: build.champ_name, champImg: build.champ_img, savedAt: Date.now() });
+    localStorage.setItem('lol_builds', JSON.stringify(local));
+  }
+
+  await renderSavedBuilds();
   btn.textContent = '✅ Saved!';
-  setTimeout(() => btn.textContent = '💾 Save Build', 1500);
+  setTimeout(() => { btn.textContent = '💾 Save Build'; btn.disabled = false; }, 1500);
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
@@ -804,16 +925,17 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   document.getElementById('champSearch').value = '';
   document.getElementById('champCard').classList.remove('visible');
   document.getElementById('buildName').value = '';
-  renderSlots();
-  updateStats();
+  renderSlots(); updateStats();
 });
 
-// ── Init ──
 async function init() {
   await loadData();
   renderSlots();
   setupChampSearch();
-  renderSavedBuilds();
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session?.user || null;
+  updateAuthBar();
+  await renderSavedBuilds();
 }
 
 init();
