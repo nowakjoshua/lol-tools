@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LoL Item Stat Comparer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #c8a96e;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #c89b3c;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #5b5b5b;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+
+    /* Mode tabs */
+    .mode-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .mode-tab {
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      color: #5b5b5b;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 8px 20px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .mode-tab:hover { border-color: #c89b3c; color: #c8a96e; }
+
+    .mode-tab.active {
+      background: #1a1608;
+      border-color: #c89b3c;
+      color: #c89b3c;
+    }
+
+    /* Panels */
+    .panels {
+      display: flex;
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto 32px;
+      align-items: flex-start;
+    }
+
+    .panel {
+      flex: 1;
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .panel h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #5b5b5b;
+      margin-bottom: 12px;
+    }
+
+    .search-wrap { position: relative; }
+
+    input[type="text"] {
+      width: 100%;
+      background: #0d0d14;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      color: #c8a96e;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: #c89b3c; }
+    input[type="text"]::placeholder { color: #3a3a4a; }
+
+    .dropdown {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: #16161f;
+      border: 1px solid #2a2a3a;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+
+    .dropdown.open { display: block; }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .dropdown-item:hover { background: #1e1e2a; }
+
+    .dropdown-item img {
+      width: 32px; height: 32px;
+      border-radius: 4px;
+      border: 1px solid #2a2a3a;
+    }
+
+    .dropdown-item span { font-size: 0.9rem; color: #c8a96e; }
+    .dropdown-item .item-gold { margin-left: auto; font-size: 0.75rem; color: #c89b3c; }
+
+    .selected-card {
+      margin-top: 16px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      background: #0d0d14;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+    }
+
+    .selected-card.visible { display: flex; }
+
+    .selected-card img {
+      width: 48px; height: 48px;
+      border-radius: 6px;
+      border: 2px solid #c89b3c;
+      flex-shrink: 0;
+    }
+
+    .selected-card .item-name { font-size: 1rem; color: #e8c97e; font-weight: 600; }
+    .selected-card .item-cost { font-size: 0.8rem; color: #c89b3c; margin-top: 2px; }
+    .stat-list { margin-top: 8px; }
+    .stat-list .stat-row { font-size: 0.8rem; color: #8a8a9a; margin-top: 2px; }
+
+    .compare-section { max-width: 1100px; margin: 0 auto; }
+
+    .compare-section h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #5b5b5b;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .compare-table th {
+      background: #0d0d14;
+      color: #5b5b5b;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 10px 16px;
+      text-align: left;
+    }
+
+    .compare-table th.center { text-align: center; }
+
+    .compare-table td {
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      border-top: 1px solid #1a1a24;
+    }
+
+    .compare-table td.stat-name { color: #7a7a8a; }
+    .compare-table td.val { text-align: center; color: #c8a96e; font-weight: 600; }
+    .compare-table td.diff { text-align: center; font-weight: 700; }
+
+    .diff-pos { color: #4caf50; }
+    .diff-neg { color: #f44336; }
+    .diff-zero { color: #5b5b5b; }
+
+    .compare-table tr:hover td { background: #14141c; }
+
+    .gold-row td { background: #0f0e08 !important; }
+    .gold-row .stat-name { color: #c89b3c !important; }
+    .gold-row .val { color: #c89b3c !important; }
+
+    .no-compare {
+      text-align: center;
+      color: #3a3a4a;
+      font-size: 0.9rem;
+      padding: 40px 0;
+    }
+
+    .clear-btn {
+      background: none;
+      border: 1px solid #2a2a3a;
+      color: #5b5b5b;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-left: auto;
+      display: block;
+      margin-top: 8px;
+      transition: all 0.15s;
+    }
+
+    .clear-btn:hover { border-color: #c89b3c; color: #c89b3c; }
+
+    .loading {
+      text-align: center;
+      color: #3a3a4a;
+      font-size: 0.85rem;
+      padding: 12px 0;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d0d14; }
+    ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div style="max-width:1100px;margin:0 auto 16px;padding:0 4px">
+  <a href="index.html" style="color:#5b5b5b;font-size:0.8rem;text-decoration:none;letter-spacing:0.05em;transition:color 0.15s" onmouseover="this.style.color='#c89b3c'" onmouseout="this.style.color='#5b5b5b'">← Back to Tools</a>
+</div>
+<h1>🛡️ Item Stat Comparer</h1>
+<p class="subtitle">League of Legends · Patch 16.6.1</p>
+
+<!-- Mode tabs -->
+<div class="mode-tabs">
+  <button class="mode-tab active" data-mode="sr">🗺️ Summoner's Rift</button>
+  <button class="mode-tab" data-mode="aram">🌉 ARAM</button>
+  <button class="mode-tab" data-mode="arena">⚔️ Arena</button>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <h2>Item A</h2>
+    <div class="search-wrap">
+      <input type="text" id="searchA" placeholder="Search for an item..." autocomplete="off">
+      <div class="dropdown" id="dropdownA"></div>
+    </div>
+    <div class="selected-card" id="cardA">
+      <img id="imgA" src="" alt="">
+      <div>
+        <div class="item-name" id="nameA"></div>
+        <div class="item-cost" id="costA"></div>
+        <div class="stat-list" id="statsA"></div>
+      </div>
+    </div>
+    <button class="clear-btn" id="clearA">Clear</button>
+  </div>
+
+  <div class="panel">
+    <h2>Item B</h2>
+    <div class="search-wrap">
+      <input type="text" id="searchB" placeholder="Search for an item..." autocomplete="off">
+      <div class="dropdown" id="dropdownB"></div>
+    </div>
+    <div class="selected-card" id="cardB">
+      <img id="imgB" src="" alt="">
+      <div>
+        <div class="item-name" id="nameB"></div>
+        <div class="item-cost" id="costB"></div>
+        <div class="stat-list" id="statsB"></div>
+      </div>
+    </div>
+    <button class="clear-btn" id="clearB">Clear</button>
+  </div>
+</div>
+
+<div class="compare-section">
+  <h2>Stat Comparison</h2>
+  <div id="compareOut"><p class="no-compare">Select two items to compare their stats.</p></div>
+</div>
+
+<script>
+const VERSION = '16.6.1';
+const IMG_BASE = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/item/`;
+
+// Map IDs per mode
+const MODE_MAPS = {
+  sr:    '11',
+  aram:  '12',
+  arena: '30',
+};
+
+// Parse all stats from Riot's description HTML <stats> block
+function parseDescriptionStats(description) {
+  const stats = {};
+  const match = description.match(/<stats>([\s\S]*?)<\/stats>/);
+  if (!match) return stats;
+  const html = match[1];
+  const regex = /<attention>([^<]+)<\/attention>\s*([^<\n\r]+)/g;
+  let m;
+  while ((m = regex.exec(html)) !== null) {
+    const rawVal = m[1].trim().replace('%', '');
+    const name = m[2].trim().replace(/<[^>]+>/g, '').trim();
+    const val = parseFloat(rawVal);
+    if (!isNaN(val) && name) stats[name] = val;
+  }
+  return stats;
+}
+
+function formatStat(name, val) {
+  const pct = ['Critical Strike Chance','Critical Strike Damage','Attack Speed',
+               'Life Steal','Omnivamp','Heal and Shield Power','Tenacity',
+               'Armor Penetration','Magic Penetration'].includes(name);
+  if (pct) return val + '%';
+  return val % 1 === 0 ? val : parseFloat(val.toFixed(1));
+}
+
+let rawData = null;       // full item.json data
+let allItems = {};        // filtered for current mode
+let currentMode = 'sr';
+let selectedA = null;
+let selectedB = null;
+
+async function loadItems() {
+  if (!rawData) {
+    document.getElementById('compareOut').innerHTML = '<p class="loading">Loading items...</p>';
+    const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${VERSION}/data/en_US/item.json`);
+    rawData = await res.json();
+  }
+  filterItemsByMode(currentMode);
+}
+
+function filterItemsByMode(mode) {
+  const mapId = MODE_MAPS[mode];
+  allItems = {};
+  const seenNames = {};
+
+  for (const [id, item] of Object.entries(rawData.data)) {
+    if (!item.gold?.purchasable) continue;
+    if (!item.maps?.[mapId]) continue;
+
+    const name = item.name;
+    if (!seenNames[name]) {
+      allItems[id] = item;
+      seenNames[name] = id;
+    }
+  }
+
+  // Reset selections and UI when mode changes
+  clearSide('A');
+  clearSide('B');
+  renderComparison();
+}
+
+function search(query, dropdownEl, inputEl, side) {
+  const q = query.toLowerCase().trim();
+  dropdownEl.innerHTML = '';
+  if (q.length < 2) { dropdownEl.classList.remove('open'); return; }
+
+  const results = Object.entries(allItems)
+    .filter(([id, item]) => item.name.toLowerCase().includes(q))
+    .slice(0, 12);
+
+  if (!results.length) { dropdownEl.classList.remove('open'); return; }
+
+  for (const [id, item] of results) {
+    const div = document.createElement('div');
+    div.className = 'dropdown-item';
+    div.innerHTML = `
+      <img src="${IMG_BASE}${item.image.full}" alt="">
+      <span>${item.name}</span>
+      <span class="item-gold">🪙 ${item.gold.total}</span>
+    `;
+    div.addEventListener('click', () => {
+      selectItem(id, item, side);
+      dropdownEl.classList.remove('open');
+      inputEl.value = item.name;
+    });
+    dropdownEl.appendChild(div);
+  }
+  dropdownEl.classList.add('open');
+}
+
+function selectItem(id, item, side) {
+  document.getElementById('img' + side).src = IMG_BASE + item.image.full;
+  document.getElementById('name' + side).textContent = item.name;
+  document.getElementById('cost' + side).textContent = `🪙 ${item.gold.total} gold`;
+
+  const parsedStats = parseDescriptionStats(item.description || '');
+
+  document.getElementById('stats' + side).innerHTML = Object.entries(parsedStats)
+    .map(([k, v]) => `<div class="stat-row">${k}: <b>${formatStat(k, v)}</b></div>`)
+    .join('') || '<div class="stat-row" style="color:#3a3a4a">No stats</div>';
+
+  document.getElementById('card' + side).classList.add('visible');
+
+  if (side === 'A') selectedA = { id, item, stats: parsedStats };
+  else             selectedB = { id, item, stats: parsedStats };
+
+  renderComparison();
+}
+
+function clearSide(side) {
+  document.getElementById('search' + side).value = '';
+  document.getElementById('dropdown' + side).classList.remove('open');
+  document.getElementById('card' + side).classList.remove('visible');
+  if (side === 'A') selectedA = null;
+  else             selectedB = null;
+}
+
+function renderComparison() {
+  const out = document.getElementById('compareOut');
+  if (!selectedA || !selectedB) {
+    out.innerHTML = '<p class="no-compare">Select two items to compare their stats.</p>';
+    return;
+  }
+
+  const a = selectedA.item;
+  const b = selectedB.item;
+  const sA = selectedA.stats;
+  const sB = selectedB.stats;
+  const allKeys = new Set([...Object.keys(sA), ...Object.keys(sB)]);
+
+  const rows = [];
+  for (const key of allKeys) {
+    const vA = sA[key] || 0;
+    const vB = sB[key] || 0;
+    rows.push({ key, vA, vB, diff: vB - vA });
+  }
+  rows.sort((x, y) => Math.abs(y.diff) - Math.abs(x.diff));
+
+  const goldDiff = b.gold.total - a.gold.total;
+  const modeName = { sr: "Summoner's Rift", aram: 'ARAM', arena: 'Arena' }[currentMode];
+
+  let html = `<table class="compare-table">
+    <thead>
+      <tr>
+        <th>Stat <span style="color:#3a3a4a;font-weight:400;text-transform:none">(${modeName})</span></th>
+        <th class="center">${a.name}</th>
+        <th class="center">${b.name}</th>
+        <th class="center">Difference (B − A)</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  for (const { key, vA, vB, diff } of rows) {
+    const fA = vA ? formatStat(key, vA) : '—';
+    const fB = vB ? formatStat(key, vB) : '—';
+    const fDiff = diff > 0 ? `+${formatStat(key, diff)}` : diff < 0 ? `${formatStat(key, diff)}` : '—';
+    const cls = diff > 0 ? 'diff-pos' : diff < 0 ? 'diff-neg' : 'diff-zero';
+    html += `<tr>
+      <td class="stat-name">${key}</td>
+      <td class="val">${fA}</td>
+      <td class="val">${fB}</td>
+      <td class="diff ${cls}">${fDiff}</td>
+    </tr>`;
+  }
+
+  const goldCls = goldDiff > 0 ? 'diff-neg' : goldDiff < 0 ? 'diff-pos' : 'diff-zero';
+  html += `<tr class="gold-row">
+    <td class="stat-name">🪙 Gold Cost</td>
+    <td class="val">${a.gold.total}</td>
+    <td class="val">${b.gold.total}</td>
+    <td class="diff ${goldCls}">${goldDiff > 0 ? '+' : ''}${goldDiff}</td>
+  </tr>`;
+
+  html += '</tbody></table>';
+  out.innerHTML = html;
+}
+
+// Mode tabs
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    filterItemsByMode(currentMode);
+  });
+});
+
+// Wire up search inputs
+['A', 'B'].forEach(side => {
+  const input    = document.getElementById('search' + side);
+  const dropdown = document.getElementById('dropdown' + side);
+
+  input.addEventListener('input', () => search(input.value, dropdown, input, side));
+  input.addEventListener('focus', () => { if (input.value.length >= 2) dropdown.classList.add('open'); });
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target))
+      dropdown.classList.remove('open');
+  });
+
+  document.getElementById('clear' + side).addEventListener('click', () => {
+    clearSide(side);
+    renderComparison();
+  });
+});
+
+loadItems();
+</script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LoL Tools</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #c8a96e;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 60px 16px 40px;
+    }
+
+    header .logo {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #c89b3c;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    header .logo span { color: #e8c97e; }
+
+    header p {
+      margin-top: 10px;
+      color: #5b5b5b;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 80px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #c89b3c, transparent);
+      margin: 0 auto 48px;
+    }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+      width: 100%;
+    }
+
+    /* ── Tool Card ── */
+    .card {
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 28px 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(200,155,60,0.04), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover {
+      border-color: #c89b3c;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card .icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .card .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #e8c97e;
+      letter-spacing: 0.02em;
+    }
+
+    .card .card-desc {
+      font-size: 0.82rem;
+      color: #5b5b5b;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .card .card-tag {
+      display: inline-block;
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      color: #4a4a5a;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      text-transform: uppercase;
+      align-self: flex-start;
+    }
+
+    .card.coming-soon {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .card.coming-soon .card-tag {
+      color: #5b5b5b;
+      border-color: #2a2a3a;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 24px;
+      color: #2a2a3a;
+      font-size: 0.75rem;
+      border-top: 1px solid #111118;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚔️ Lo<span>L</span> Tools</div>
+  <p>League of Legends Utilities · Patch 16.6.1</p>
+</header>
+<div class="divider"></div>
+
+<div class="grid">
+
+  <!-- Item Stat Comparer -->
+  <a class="card" href="item-comparer.html">
+    <div class="icon">🛡️</div>
+    <div class="card-title">Item Stat Comparer</div>
+    <div class="card-desc">Compare two items side by side across all stats. Supports Summoner's Rift, ARAM, and Arena.</div>
+    <span class="card-tag">Items</span>
+  </a>
+
+  <!-- Coming soon placeholders -->
+  <div class="card coming-soon">
+    <div class="icon">📊</div>
+    <div class="card-title">Champion Stats</div>
+    <div class="card-desc">View and compare base stats and scaling between champions.</div>
+    <span class="card-tag">Coming Soon</span>
+  </div>
+
+  <div class="card coming-soon">
+    <div class="icon">🧮</div>
+    <div class="card-title">Build Calculator</div>
+    <div class="card-desc">Stack up to 6 items and see your total stats at a glance.</div>
+    <span class="card-tag">Coming Soon</span>
+  </div>
+
+  <div class="card coming-soon">
+    <div class="icon">🎯</div>
+    <div class="card-title">Damage Calculator</div>
+    <div class="card-desc">Estimate theoretical damage output based on your build and target armor/MR.</div>
+    <span class="card-tag">Coming Soon</span>
+  </div>
+
+</div>
+
+<footer>
+  Data from Riot Games Data Dragon · Not affiliated with Riot Games
+</footer>
+
+</body>
+</html>
