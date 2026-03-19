@@ -531,19 +531,14 @@ function updateAuthBar() {
       <span class="user-info">👤 Logged in as <span>${username}</span></span>
       <button class="auth-btn" id="logoutBtn">Logout</button>
     `;
+    document.getElementById('logoutBtn').onclick = async () => {
+      await sb.auth.signOut();
+    };
   } else {
     bar.innerHTML = `<button class="auth-btn highlight" id="openAuthBtn">🔑 Login / Register</button>`;
+    document.getElementById('openAuthBtn').onclick = () => openAuthModal('login');
   }
 }
-
-// Event delegation for auth bar buttons
-document.getElementById('authBar').addEventListener('click', async e => {
-  if (e.target.id === 'logoutBtn') {
-    await sb.auth.signOut();
-  } else if (e.target.id === 'openAuthBtn') {
-    openAuthModal('login');
-  }
-});
 
 function openAuthModal(mode) {
   authMode = mode;
