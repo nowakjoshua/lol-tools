@@ -888,35 +888,43 @@ function loadBuild(b) {
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
   if (!buildSlots.some(Boolean)) { alert('Add at least one item to save a build.'); return; }
-  const tags = [...document.getElementById('tagsWrap').querySelectorAll('.tag')].map(t => t.textContent);
-  let gold = 0;
-  buildSlots.forEach(item => { if (item) gold += item.gold?.total || 0; });
-  const itemIds = buildSlots.map(item => item ? Object.keys(allItems).find(id => allItems[id] === item) : null);
-
-  const build = {
-    name: document.getElementById('buildName').value.trim() || 'Unnamed Build',
-    champ_key: selectedChamp?.key || null,
-    champ_name: selectedChamp?.champ?.name || null,
-    champ_img: selectedChamp ? IMG_CHAMP + selectedChamp.champ.image.full : null,
-    item_ids: itemIds,
-    tags, gold,
-  };
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true;
+  btn.textContent = '⏳ Saving…';
 
-  if (currentUser) {
-    const { error } = await sb.from('builds').insert({ ...build, user_id: currentUser.id });
-    if (error) { alert('Error saving: ' + error.message); btn.disabled = false; return; }
-  } else {
-    const local = JSON.parse(localStorage.getItem('lol_builds')||'[]');
-    local.unshift({ ...build, itemIds: itemIds, champKey: build.champ_key, champName: build.champ_name, champImg: build.champ_img, savedAt: Date.now() });
-    localStorage.setItem('lol_builds', JSON.stringify(local));
+  try {
+    const tags = [...document.getElementById('tagsWrap').querySelectorAll('.tag')].map(t => t.textContent);
+    let gold = 0;
+    buildSlots.forEach(item => { if (item) gold += item.gold?.total || 0; });
+    const itemIds = buildSlots.map(item => item ? Object.keys(allItems).find(id => allItems[id] === item) : null);
+
+    const build = {
+      name: document.getElementById('buildName').value.trim() || 'Unnamed Build',
+      champ_key: selectedChamp?.key || null,
+      champ_name: selectedChamp?.champ?.name || null,
+      champ_img: selectedChamp ? IMG_CHAMP + selectedChamp.champ.image.full : null,
+      item_ids: itemIds,
+      tags, gold,
+    };
+
+    if (currentUser) {
+      const { error } = await sb.from('builds').insert({ ...build, user_id: currentUser.id });
+      if (error) throw new Error(error.message);
+    } else {
+      const local = JSON.parse(localStorage.getItem('lol_builds')||'[]');
+      local.unshift({ ...build, itemIds: itemIds, champKey: build.champ_key, champName: build.champ_name, champImg: build.champ_img, savedAt: Date.now() });
+      localStorage.setItem('lol_builds', JSON.stringify(local));
+    }
+
+    await renderSavedBuilds();
+    btn.textContent = '✅ Saved!';
+    setTimeout(() => { btn.textContent = '💾 Save Build'; btn.disabled = false; }, 1500);
+  } catch (err) {
+    alert('Error saving build: ' + err.message);
+    btn.textContent = '💾 Save Build';
+    btn.disabled = false;
   }
-
-  await renderSavedBuilds();
-  btn.textContent = '✅ Saved!';
-  setTimeout(() => { btn.textContent = '💾 Save Build'; btn.disabled = false; }, 1500);
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
