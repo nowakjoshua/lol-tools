@@ -395,8 +395,12 @@
 
 <!-- Auth Bar -->
 <div class="auth-bar" id="authBar">
-  <div id="authBarContent">
+  <div id="authLoggedOut">
     <button class="auth-btn highlight" id="openAuthBtn">🔑 Login / Register</button>
+  </div>
+  <div id="authLoggedIn" style="display:none;align-items:center;gap:12px">
+    <span class="user-info">👤 Logged in as <span id="authUsername2"></span></span>
+    <button class="auth-btn" id="logoutBtn">Logout</button>
   </div>
 </div>
 
@@ -524,21 +528,26 @@ sb.auth.onAuthStateChange(async (event, session) => {
 });
 
 function updateAuthBar() {
-  const bar = document.getElementById('authBarContent');
+  const loggedIn  = document.getElementById('authLoggedIn');
+  const loggedOut = document.getElementById('authLoggedOut');
   if (currentUser) {
     const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'User';
-    bar.innerHTML = `
-      <span class="user-info">👤 Logged in as <span>${username}</span></span>
-      <button class="auth-btn" id="logoutBtn">Logout</button>
-    `;
-    document.getElementById('logoutBtn').onclick = async () => {
-      await sb.auth.signOut();
-    };
+    document.getElementById('authUsername2').textContent = username;
+    loggedIn.style.display  = 'flex';
+    loggedOut.style.display = 'none';
   } else {
-    bar.innerHTML = `<button class="auth-btn highlight" id="openAuthBtn">🔑 Login / Register</button>`;
-    document.getElementById('openAuthBtn').onclick = () => openAuthModal('login');
+    loggedIn.style.display  = 'none';
+    loggedOut.style.display = 'block';
   }
 }
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+});
+
+document.getElementById('openAuthBtn').addEventListener('click', () => {
+  openAuthModal('login');
+});
 
 function openAuthModal(mode) {
   authMode = mode;
