@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Profile · LoL Tools</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0f;
+      color: #c8a96e;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px 60px;
+    }
+    .back-link {
+      display: block; max-width: 600px; margin: 0 auto 16px;
+      color: #5b5b5b; font-size: 0.8rem; text-decoration: none;
+      letter-spacing: 0.05em; transition: color 0.15s;
+    }
+    .back-link:hover { color: #c89b3c; }
+    h1 {
+      text-align: center; font-size: 2rem; color: #c89b3c;
+      letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .subtitle { text-align: center; color: #5b5b5b; font-size: 0.85rem; margin-bottom: 32px; }
+
+    .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    .panel {
+      background: #111118; border: 1px solid #2a2a3a;
+      border-radius: 10px; padding: 24px;
+    }
+    .panel-title {
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.15em; color: #5b5b5b; margin-bottom: 18px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5b5b5b; }
+
+    input[type="text"], input[type="password"], select {
+      width: 100%; background: #0d0d14; border: 1px solid #2a2a3a;
+      border-radius: 6px; color: #c8a96e; font-size: 0.95rem;
+      padding: 10px 14px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #c89b3c; }
+    input::placeholder { color: #3a3a4a; }
+    select option { background: #111118; }
+
+    .input-hint { font-size: 0.72rem; color: #3a3a4a; margin-top: 2px; }
+
+    .btn {
+      background: none; border: 1px solid #2a2a3a; border-radius: 6px;
+      color: #c8a96e; cursor: pointer; font-size: 0.85rem;
+      padding: 9px 18px; transition: all 0.15s;
+    }
+    .btn:hover { border-color: #c89b3c; color: #c89b3c; }
+    .btn.primary { background: #1a1608; border-color: #c89b3c; color: #c89b3c; }
+    .btn.primary:hover { background: #c89b3c; color: #0a0a0f; }
+    .btn.danger:hover { border-color: #f44336; color: #f44336; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+
+    .alert {
+      padding: 10px 14px; border-radius: 6px;
+      font-size: 0.82rem; margin-top: 10px; display: none;
+    }
+    .alert.success { background: #0a1a0a; border: 1px solid #4caf5044; color: #4caf50; display: block; }
+    .alert.error   { background: #1a0a0a; border: 1px solid #f4433644; color: #f44336; display: block; }
+
+    .profile-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+      padding: 16px; background: #0d0d14; border: 1px solid #2a2a3a; border-radius: 8px;
+    }
+    .avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #1a1a24; border: 2px solid #c89b3c;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .profile-meta .name { font-size: 1.1rem; font-weight: 700; color: #e8c97e; }
+    .profile-meta .since { font-size: 0.75rem; color: #5b5b5b; margin-top: 2px; }
+    .profile-meta .riot-badge {
+      display: inline-block; margin-top: 6px;
+      background: #0d0a1a; border: 1px solid #7b68ee44;
+      border-radius: 12px; padding: 2px 10px;
+      font-size: 0.72rem; color: #7b68ee;
+    }
+
+    .not-logged-in {
+      text-align: center; padding: 60px 0; color: #3a3a4a;
+    }
+    .not-logged-in a { color: #c89b3c; text-decoration: none; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d0d14; }
+    ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← Back to Tools</a>
+<h1>👤 Profile</h1>
+<p class="subtitle" id="pageSubtitle">Your account & settings</p>
+
+<div class="container" id="mainContainer">
+  <div class="panel" style="text-align:center;padding:60px">
+    <div style="color:#3a3a4a;font-size:0.9rem">Loading…</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const REGIONS = [
+  { value: 'EUW1',  label: 'EUW — Europe West' },
+  { value: 'EUN1',  label: 'EUNE — Europe Nordic & East' },
+  { value: 'NA1',   label: 'NA — North America' },
+  { value: 'KR',    label: 'KR — Korea' },
+  { value: 'BR1',   label: 'BR — Brazil' },
+  { value: 'LA1',   label: 'LAN — Latin America North' },
+  { value: 'LA2',   label: 'LAS — Latin America South' },
+  { value: 'OC1',   label: 'OCE — Oceania' },
+  { value: 'TR1',   label: 'TR — Turkey' },
+  { value: 'RU',    label: 'RU — Russia' },
+  { value: 'JP1',   label: 'JP — Japan' },
+];
+
+let currentUser = null;
+let currentProfile = null;
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session?.user || null;
+  if (currentUser) {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentProfile = data;
+    renderProfile();
+  } else {
+    renderNotLoggedIn();
+  }
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+    if (currentUser) {
+      const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+      currentProfile = data;
+      renderProfile();
+    } else {
+      renderNotLoggedIn();
+    }
+  });
+}
+
+function renderNotLoggedIn() {
+  document.getElementById('mainContainer').innerHTML = `
+    <div class="panel not-logged-in">
+      <div style="font-size:2rem;margin-bottom:12px">🔒</div>
+      <div style="font-size:1rem;color:#5b5b5b;margin-bottom:16px">You need to be logged in to view your profile.</div>
+      <a href="build-planner.html">→ Go to Build Planner to login</a>
+    </div>
+  `;
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function renderProfile() {
+  const username = currentProfile?.username || currentUser?.email?.split('@')[0] || 'User';
+  const riotId   = currentProfile?.riot_id || '';
+  const region   = currentProfile?.riot_region || 'EUW1';
+  const since    = currentProfile?.created_at ? formatDate(currentProfile.created_at) : '';
+
+  const regionOptions = REGIONS.map(r =>
+    `<option value="${r.value}" ${r.value === region ? 'selected' : ''}>${r.label}</option>`
+  ).join('');
+
+  document.getElementById('mainContainer').innerHTML = `
+    <!-- Profile Header -->
+    <div class="panel">
+      <div class="profile-header">
+        <div class="avatar">⚔️</div>
+        <div class="profile-meta">
+          <div class="name">${username}</div>
+          <div class="since">Member since ${since}</div>
+          ${riotId ? `<div class="riot-badge">🎮 ${riotId}</div>` : '<div class="riot-badge" style="color:#3a3a4a;border-color:#2a2a3a44">No Riot ID linked</div>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Riot ID -->
+    <div class="panel">
+      <div class="panel-title">🎮 Riot Account</div>
+      <div class="form-group">
+        <label>Riot ID</label>
+        <input type="text" id="riotIdInput" value="${riotId}" placeholder="YourName#EUW">
+        <div class="input-hint">Find it in the League client — top right corner. Format: Name#Tag</div>
+      </div>
+      <div class="form-group">
+        <label>Region</label>
+        <select id="regionSelect">${regionOptions}</select>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="saveRiotBtn">💾 Save Riot ID</button>
+      </div>
+      <div class="alert" id="riotAlert"></div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="panel">
+      <div class="panel-title">🔒 Change Password</div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" id="newPassword" placeholder="Min. 6 characters">
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPassword" placeholder="Repeat password">
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="savePasswordBtn">🔒 Update Password</button>
+      </div>
+      <div class="alert" id="passwordAlert"></div>
+    </div>
+
+    <!-- Logout -->
+    <div class="panel">
+      <div class="panel-title">Account</div>
+      <div class="btn-row">
+        <button class="btn danger" id="logoutBtn">→ Logout</button>
+      </div>
+    </div>
+  `;
+
+  // Save Riot ID
+  document.getElementById('saveRiotBtn').onclick = async () => {
+    const btn = document.getElementById('saveRiotBtn');
+    const alertEl = document.getElementById('riotAlert');
+    const riotId = document.getElementById('riotIdInput').value.trim();
+    const region = document.getElementById('regionSelect').value;
+
+    alertEl.className = 'alert';
+
+    if (riotId && !riotId.includes('#')) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Format must be Name#Tag (e.g. Joshua#EUW)';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Saving…';
+
+    const { error } = await sb.from('profiles')
+      .update({ riot_id: riotId || null, riot_region: region })
+      .eq('id', currentUser.id);
+
+    if (error) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Error: ' + error.message;
+    } else {
+      currentProfile.riot_id = riotId;
+      currentProfile.riot_region = region;
+      alertEl.className = 'alert success';
+      alertEl.textContent = '✅ Riot ID saved!';
+      setTimeout(() => renderProfile(), 1500);
+    }
+    btn.disabled = false;
+    btn.textContent = '💾 Save Riot ID';
+  };
+
+  // Change password
+  document.getElementById('savePasswordBtn').onclick = async () => {
+    const btn = document.getElementById('savePasswordBtn');
+    const alertEl = document.getElementById('passwordAlert');
+    const newPw  = document.getElementById('newPassword').value;
+    const confPw = document.getElementById('confirmPassword').value;
+
+    alertEl.className = 'alert';
+
+    if (newPw.length < 6) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+    if (newPw !== confPw) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Passwords do not match.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Updating…';
+
+    const { error } = await sb.auth.updateUser({ password: newPw });
+    if (error) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Error: ' + error.message;
+    } else {
+      alertEl.className = 'alert success';
+      alertEl.textContent = '✅ Password updated!';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    }
+    btn.disabled = false;
+    btn.textContent = '🔒 Update Password';
+  };
+
+  // Logout
+  document.getElementById('logoutBtn').onclick = async () => {
+    await sb.auth.signOut();
+    window.location.href = 'index.html';
+  };
+}
+
+init();
+</script>
+</body>
+</html>
