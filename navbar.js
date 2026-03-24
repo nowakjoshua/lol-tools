@@ -58,6 +58,7 @@
         font-size: 0.78rem; padding: 5px 10px;
         border: 1px solid #2a2a3a; border-radius: 5px;
         transition: all 0.15s;
+        display: inline-flex; align-items: center; gap: 5px;
       }
       .nav-profile-btn:hover { border-color: #c89b3c; color: #c89b3c; }
       .nav-login-btn, .nav-logout-btn {
