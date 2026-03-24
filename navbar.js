@@ -23,11 +23,13 @@
         background: #0d0d14;
         border-bottom: 1px solid #1a1a24;
         padding: 0 24px;
-        position: sticky; top: 0; z-index: 500;
-        margin-top: 0 !important;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 500;
+        width: 100%;
       }
-      body > #lol-navbar:first-child {
-        margin-top: 0 !important;
+      body {
+        padding-top: 52px !important;
       }
       .nav-inner {
         max-width: 1200px; margin: 0 auto;
