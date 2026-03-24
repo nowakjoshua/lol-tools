@@ -5,10 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>Performance Review · LoL Tools</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    window.SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
-    window.SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
-  </script>
+  <script src="auth-service.js"></script>
   <script src="navbar.js" defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -234,10 +231,8 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
 const RIOT_KEY    = 'RGAPI-54cc1652-51e9-4fca-8126-2dc6d600c0b0';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window._sb;
 
 const VERSION = '16.6.1';
 const IMG_CHAMP = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/champion/`;

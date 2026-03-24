@@ -7,10 +7,7 @@
   <meta http-equiv="Expires" content="0">
   <title>Build Planner · LoL Tools</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    window.SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
-    window.SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
-  </script>
+  <script src="auth-service.js"></script>
   <script src="navbar.js" defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -480,7 +477,7 @@
 
 <script>
 // Use shared Supabase client from navbar.js
-const sb = window._sb || supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+const sb = window._sb;
 
 const VERSION = '16.6.1';
 const IMG_ITEM  = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/item/`;
@@ -492,8 +489,8 @@ let activeSlotIdx = null;
 let selectedChamp = null;
 let currentUser = null;
 
-// ── Supabase Auth — uses shared _sb from navbar.js ──
-sb.auth.onAuthStateChange(async (event, session) => {
+// ── Auth — subscribe to global auth-service ──
+window._onAuthChange(async (session) => {
   currentUser = session?.user || null;
   await renderSavedBuilds();
 });
@@ -830,8 +827,9 @@ async function init() {
   await loadData();
   renderSlots();
   setupChampSearch();
-  const { data: { session } } = await sb.auth.getSession();
-  currentUser = session?.user || null;
+  // Session already managed by auth-service.js — _onAuthChange fires renderSavedBuilds
+  // But render once immediately with current session
+  currentUser = window._currentSession?.user || null;
   await renderSavedBuilds();
 }
 

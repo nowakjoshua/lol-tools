@@ -199,10 +199,8 @@
   }
 
   window.addEventListener('load', async () => {
-    window._sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
-    const { data: { session } } = await window._sb.auth.getSession();
-    await updateNav(session);
-    window._sb.auth.onAuthStateChange(async (_, session) => await updateNav(session));
+    // auth-service.js already initialized window._sb — subscribe to its state
+    window._onAuthChange(async (session) => await updateNav(session));
 
     document.getElementById('navLoginBtn').onclick  = () => openNavModal('login');
     document.getElementById('navLogoutBtn').onclick = async () => { await window._sb.auth.signOut(); };
