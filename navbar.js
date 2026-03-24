@@ -54,7 +54,7 @@
         z-index: 500;
         width: 100%;
       }
-      body { padding-top: 52px !important; }
+      body { padding-top: 80px !important; }
       .nav-inner {
         max-width: 1200px; margin: 0 auto;
         display: flex; align-items: center; gap: 24px;
