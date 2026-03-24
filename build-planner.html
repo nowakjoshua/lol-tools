@@ -7,6 +7,11 @@
   <meta http-equiv="Expires" content="0">
   <title>Build Planner · LoL Tools</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
+  </script>
+  <script src="navbar.js" defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -392,21 +397,8 @@
 </head>
 <body>
 
-<a class="back-link" href="index.html">← Back to Tools</a>
 <h1>🧮 Build Planner</h1>
 <p class="subtitle">League of Legends · Patch 16.6.1</p>
-
-<!-- Auth Bar -->
-<div class="auth-bar" id="authBar">
-  <div id="authLoggedOut">
-    <button class="auth-btn highlight" id="openAuthBtn">🔑 Login / Register</button>
-  </div>
-  <div id="authLoggedIn" style="display:none;align-items:center;gap:12px">
-    <span class="user-info">👤 Logged in as <span id="authUsername2"></span></span>
-    <a href="profile.html" style="color:#5b5b5b;font-size:0.78rem;text-decoration:none;border:1px solid #2a2a3a;border-radius:6px;padding:5px 10px;transition:all 0.15s" onmouseover="this.style.color='#c89b3c';this.style.borderColor='#c89b3c'" onmouseout="this.style.color='#5b5b5b';this.style.borderColor='#2a2a3a'">Profile</a>
-    <button class="auth-btn" id="logoutBtn">Logout</button>
-  </div>
-</div>
 
 <!-- ── Auth Modal ── -->
 <div class="modal-overlay" id="authModal">
@@ -527,30 +519,7 @@ let authMode = 'login';
 // ── Supabase Auth ──
 sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user || null;
-  updateAuthBar();
   await renderSavedBuilds();
-});
-
-function updateAuthBar() {
-  const loggedIn  = document.getElementById('authLoggedIn');
-  const loggedOut = document.getElementById('authLoggedOut');
-  if (currentUser) {
-    const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'User';
-    document.getElementById('authUsername2').textContent = username;
-    loggedIn.style.display  = 'flex';
-    loggedOut.style.display = 'none';
-  } else {
-    loggedIn.style.display  = 'none';
-    loggedOut.style.display = 'block';
-  }
-}
-
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await sb.auth.signOut();
-});
-
-document.getElementById('openAuthBtn').addEventListener('click', () => {
-  openAuthModal('login');
 });
 
 function openAuthModal(mode) {
@@ -955,7 +924,6 @@ async function init() {
   setupChampSearch();
   const { data: { session } } = await sb.auth.getSession();
   currentUser = session?.user || null;
-  updateAuthBar();
   await renderSavedBuilds();
 }
 
