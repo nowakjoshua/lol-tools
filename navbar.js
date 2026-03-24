@@ -24,6 +24,10 @@
         border-bottom: 1px solid #1a1a24;
         padding: 0 24px;
         position: sticky; top: 0; z-index: 500;
+        margin-top: 0 !important;
+      }
+      body > #lol-navbar:first-child {
+        margin-top: 0 !important;
       }
       .nav-inner {
         max-width: 1200px; margin: 0 auto;
@@ -77,6 +81,8 @@
   `;
 
   // Inject navbar at top of body
+  document.body.style.paddingTop = '0';
+  document.body.style.marginTop = '0';
   document.body.insertAdjacentHTML('afterbegin', NAV_HTML);
 
   // Mark active link
