@@ -400,29 +400,7 @@
 <h1>🧮 Build Planner</h1>
 <p class="subtitle">League of Legends · Patch 16.6.1</p>
 
-<!-- ── Auth Modal ── -->
-<div class="modal-overlay" id="authModal">
-  <div class="modal">
-    <div class="modal-title">Account</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabLogin">Login</button>
-      <button class="auth-tab" id="tabRegister">Register</button>
-    </div>
-    <div class="form-group">
-      <label>Username</label>
-      <input type="text" id="authUsername" placeholder="your_username" autocomplete="off" spellcheck="false">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="authPassword" placeholder="••••••••">
-    </div>
-    <div class="auth-error" id="authError"></div>
-    <div class="modal-actions">
-      <button class="btn" id="authCancelBtn">Cancel</button>
-      <button class="btn primary" id="authSubmitBtn">Login</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- ── Item Picker Modal ── -->
 <div class="item-modal-overlay" id="itemModalOverlay">
@@ -501,9 +479,8 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://pwqnwxxxrynlklxrbuco.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_OqIsltFoT9bYBcZ-Ik_uRg_Lr9xmpAh';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Use shared Supabase client from navbar.js
+const sb = window._sb || supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
 
 const VERSION = '16.6.1';
 const IMG_ITEM  = `https://ddragon.leagueoflegends.com/cdn/${VERSION}/img/item/`;
@@ -514,80 +491,11 @@ let buildSlots = [null,null,null,null,null,null];
 let activeSlotIdx = null;
 let selectedChamp = null;
 let currentUser = null;
-let authMode = 'login';
 
-// ── Supabase Auth ──
+// ── Supabase Auth — uses shared _sb from navbar.js ──
 sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user || null;
   await renderSavedBuilds();
-});
-
-function openAuthModal(mode) {
-  authMode = mode;
-  document.getElementById('authError').textContent = '';
-  document.getElementById('authUsername').value = '';
-  document.getElementById('authPassword').value = '';
-  setAuthTab(mode);
-  document.getElementById('authModal').classList.add('open');
-  setTimeout(() => document.getElementById('authUsername').focus(), 50);
-}
-
-function setAuthTab(mode) {
-  authMode = mode;
-  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
-  document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
-  document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Login' : 'Register';
-}
-
-document.getElementById('tabLogin').addEventListener('click', () => setAuthTab('login'));
-document.getElementById('tabRegister').addEventListener('click', () => setAuthTab('register'));
-document.getElementById('authCancelBtn').addEventListener('click', () => document.getElementById('authModal').classList.remove('open'));
-document.getElementById('authModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('authModal')) document.getElementById('authModal').classList.remove('open');
-});
-
-document.getElementById('authSubmitBtn').addEventListener('click', async () => {
-  const username = document.getElementById('authUsername').value.trim().toLowerCase();
-  const password = document.getElementById('authPassword').value;
-  const errEl = document.getElementById('authError');
-  const btn = document.getElementById('authSubmitBtn');
-
-  if (!username || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
-  if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
-  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
-
-  const email = `${username}@lol-tools.app`;
-  btn.disabled = true;
-  errEl.textContent = '';
-
-  if (authMode === 'register') {
-    const { error } = await sb.auth.signUp({
-      email, password,
-      options: { data: { username } }
-    });
-    if (error) {
-      errEl.textContent = error.message.includes('already registered') ? 'Username already taken.' : error.message;
-      btn.disabled = false;
-      return;
-    }
-    document.getElementById('authModal').classList.remove('open');
-  } else {
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) {
-      errEl.textContent = 'Invalid username or password.';
-      btn.disabled = false;
-      return;
-    }
-    document.getElementById('authModal').classList.remove('open');
-  }
-  btn.disabled = false;
-});
-
-// Enter key in auth form
-['authUsername','authPassword'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('authSubmitBtn').click();
-  });
 });
 
 // ── Tags ──

@@ -158,13 +158,8 @@ async function init() {
 }
 
 function renderNotLoggedIn() {
-  document.getElementById('mainContainer').innerHTML = `
-    <div class="panel not-logged-in">
-      <div style="font-size:2rem;margin-bottom:12px">🔒</div>
-      <div style="font-size:1rem;color:#5b5b5b;margin-bottom:16px">You need to be logged in to view your profile.</div>
-      <a href="build-planner.html">→ Go to Build Planner to login</a>
-    </div>
-  `;
+  document.getElementById('mainContainer').innerHTML = '';
+  if (typeof openAuthModal === 'function') openAuthModal('login');
 }
 
 function formatDate(iso) {
